@@ -1,0 +1,6 @@
+---
+- name: update nextcloud
+  hosts: nextcloud-server
+
+  roles:
+    - nextcloud-update

@@ -1,0 +1,52 @@
+---
+- name: update servers
+  hosts: marv_server:proxmox_server
+
+  tasks:
+    - name: update packages
+      ansible.builtin.apt:
+        name: "*"
+        state: latest
+        update_cache: yes
+
+    - name: delete check_mk apt cache file
+      ansible.builtin.file:
+        path: /var/lib/check_mk_agent/cache/plugins_mk_apt.cache
+        state: absent
+
+    - name: check if reboot is required
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot
+
+    - name: reboot server
+      ansible.builtin.reboot:
+      when: reboot.stat.exists == true
+
+- name: update bitwarden container
+  hosts: bitwarden_server
+
+  tasks:
+    - name: Bitwarden - script self update
+      become: no
+      ansible.builtin.command:
+        chdir: /home/marv
+        cmd: ./bitwarden.sh updateself
+      register: bitwardenupdater
+      changed_when: false
+
+    - name: updater output
+      debug:
+        msg: "{{ bitwardenupdater.stdout }}"
+
+    - name: Bitwarden - update docker container
+      become: no
+      ansible.builtin.command:
+        chdir: /home/marv
+        cmd: ./bitwarden.sh update
+      register: bitwardenupdater
+      changed_when: false
+
+    - name: Bitwarden - update docker container output
+      debug:
+        msg: "{{ bitwardenupdater.stdout }}"

@@ -1,0 +1,9 @@
+---
+# unprivileged system sudo user
+unprivileged_user: marv
+unprivileged_user_comment: Marvin Stark
+unprivileged_user_group: users
+
+# ssh settings
+ssh_server_port: 223
+ssh_key_file: /home/marv/.ssh/marv.hamburg/id_rsa.pub

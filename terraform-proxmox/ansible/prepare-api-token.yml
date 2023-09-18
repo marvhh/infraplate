@@ -1,0 +1,33 @@
+---
+- name: prepare pve hosts for terraform deployment
+  hosts: proxmox-server
+
+  tasks:
+    - name: generate api token
+      ansible.builtin.command:
+        cmd: cat /proc/sys/kernel/random/uuid
+      register: api_uuid_token
+
+    - name: define api token
+      ansible.builtin.set_fact:
+        api_token: "tf-{{ api_uuid_token.stdout }}"
+
+    - name: debug token
+      ansible.builtin.debug:
+        msg: "{{ api_token }}"
+
+    - name: add role with privileges
+      ansible.builtin.command:
+        cmd: pveum role add TerraformProv -privs "Datastore.AllocateSpace Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.Monitor VM.PowerMgmt SDN.Use"
+
+    - name: add user for terraform
+      ansible.builtin.command:
+        cmd: pveum user add terraform-prov@pve
+
+    - name: add api token for terraform user
+      ansible.builtin.command:
+        cmd: pveum user token add terraform-prov@pve "{{ api_token }}" --comment "terraform access token"
+
+    - name: set permissions for terraform user
+      ansible.builtin.command:
+        cmd: pveum aclmod / -user terraform-prov@pve -role TerraformProv

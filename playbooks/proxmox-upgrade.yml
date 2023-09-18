@@ -1,0 +1,7 @@
+---
+- name: Upgrade proxmox server
+  become: true
+  hosts: proxmox-server
+
+  roles:
+    - marvhh.proxmox_upgrade

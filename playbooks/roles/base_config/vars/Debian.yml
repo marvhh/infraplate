@@ -1,0 +1,11 @@
+__debian_extra_apt_packages:
+  - sudo
+  - bzip2
+  - vim
+  - htop
+  - less
+  - dnsutils
+
+# ssh config
+__debian_sshd_bin: "/usr/sbin/sshd"
+__debian_sshd_port_config: "/etc/ssh/sshd_config.d/port.conf"

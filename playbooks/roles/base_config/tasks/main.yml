@@ -1,0 +1,40 @@
+---
+- name: include extra vars
+  ansible.builtin.include_vars:
+    file: "{{ ansible_distribution }}.yml"
+  when: ansible_distribution == "Debian"
+
+- name: install extra deb packages installed
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "{{ __debian_extra_apt_packages }}"
+
+- name: add unprivileged user
+  ansible.builtin.user:
+    name: "{{ unprivileged_user }}"
+    comment: "{{ unprivileged_user_comment }}"
+    group: "{{ unprivileged_user_group }}"
+
+- name: add sudoers.d file for unprivileged user
+  community.general.sudoers:
+    user: "{{ unprivileged_user }}"
+    name: "{{ unprivileged_user }}"
+    commands: ALL
+
+- name: rollout ssh-key
+  ansible.posix.authorized_key:
+    key: "{{ lookup('file','{{ ssh_key_file }}') }}"
+    user: "{{ unprivileged_user }}"
+    state: present
+    exclusive: yes
+
+- name: configure sshd
+  ansible.builtin.template:
+    src: sshd_config.d/port.conf.j2
+    dest: "{{ __debian_sshd_port_config }}"
+    owner: root
+    mode: "0644"
+    validate: "{{ __debian_sshd_bin }} -t -f %s"
+  notify: restart ssh daemon

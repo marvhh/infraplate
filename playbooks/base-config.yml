@@ -1,0 +1,7 @@
+---
+- name: system base config
+  hosts: all
+  become: yes
+
+  roles:
+    - base_config

@@ -1,0 +1,12 @@
+#jinja2: trim_blocks: "true", lstrip_blocks: "true"
+# {{ ansible_managed }}
+# Created by role {{ ansible_role_name }}
+{% if ansible_port %}
+# Port from Ansible Inventory
+Port {{ ansible_port }}
+{% elif ssh_server_port %}
+# Port from Ansible Role
+Port {{ ssh_server_port }}
+{% else %}
+Port 22
+{% endif %}
