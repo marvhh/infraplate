@@ -1,0 +1,74 @@
+resource "proxmox_vm_qemu" "example_vm" {
+    # how many vms?
+    # 0 and apply to destroy all
+    #count = 1
+    #name = "example-vm-${count.index + 1}"
+    name = "example-vm"
+    desc = "Debian VM"
+    target_node = var.proxmox_node
+    clone = var.template_name
+    qemu_os = "l26"
+
+    # basic settings
+    agent = 1
+    os_type = "cloud-init"
+    cores = 2
+    sockets = 1
+    cpu = "host"
+    memory = 2048
+    scsihw = "virtio-scsi-single"
+    bootdisk = "scsi0"
+
+    # ssh connection settings
+    ssh_user = var.cloud-init_user
+    ssh_private_key = file("${var.ssh_private_key_path}")
+    sshkeys = file("${var.ssh_public_key_path}")
+
+    # cloud-init settings
+    ciuser = var.cloud-init_user
+
+    # disk settings
+    disk {
+        slot = 0
+        size = "50G"
+        type = "scsi"
+        storage = var.proxmox_storage
+        iothread = 1
+    }
+
+    # nic settings
+    network {
+        model = "virtio"
+        bridge = "vmbr0"
+    }
+
+    # network config
+    ipconfig0 = "ip=dhcp"
+
+    # debugging stuff
+    # provisioner "remote-exec" {
+    #     inline = [
+    #         "ip a"
+    #     ]
+    # }
+
+    # connection {
+    #     type        = "ssh"
+    #     user        = self.ssh_user
+    #     private_key = self.ssh_private_key
+    #     host        = self.ssh_host
+    #     port        = self.ssh_port
+    # }
+}
+
+# create ansible_host resource
+resource "ansible_host" "example_vm" {
+    name       = "example_vm"
+
+    variables = {
+        ansible_host = proxmox_vm_qemu.general_vm.default_ipv4_address
+        ansible_port = var.ssh_port
+        ansible_ssh_private_key_file = var.ssh_private_key_path
+        ansible_user = var.cloud-init_user
+    }
+}
