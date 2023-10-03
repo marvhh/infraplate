@@ -23,7 +23,7 @@ log:
 # API and dashboard configuration
 api:
   dashboard: true
-  insecure: true
+  insecure: false
 
 # Docker configuration backend
 providers:
