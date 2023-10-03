@@ -1,0 +1,8 @@
+---
+- name: install portainer
+  hosts: all
+  become: yes
+
+  roles:
+    - portainer-traefik
+ 

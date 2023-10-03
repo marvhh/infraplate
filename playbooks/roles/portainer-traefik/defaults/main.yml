@@ -1,0 +1,6 @@
+---
+docker_user: marv
+acme_email: marv@der-marv.de
+traefik_dirs:
+  - /srv/traefik
+  - /srv/traefik/ssl-certs

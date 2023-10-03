@@ -1,0 +1,86 @@
+---
+- name: install packages
+  ansible.builtin.apt:
+    package:
+      - docker.io
+      - docker-compose
+    state: present
+    update_cache: yes
+
+- name: add user to docker group
+  ansible.builtin.user:
+    name: "{{ docker_user }}"
+    groups: docker
+    append: true
+
+- name: create docker volumes
+  community.docker.docker_volume:
+    name: "{{ item }}"
+  loop:
+    - portainer-data
+    - traefik-ssl-certs
+
+- name: Create traefik directorys
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ traefik_dirs }}"
+
+- name: copy traefik.yml configuration file
+  ansible.builtin.copy:
+    src: files/traefik.yml
+    dest: /srv/traefik/traefik.yml
+    mode: '0644'
+
+- name: download and run traefik container
+  community.docker.docker_container:
+    name: traefik
+    image: traefik:latest
+    restart: true
+    restart_policy: "always"
+    recreate: yes
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/srv/traefik/traefik.yml:/etc/traefik/traefik.yml"
+      - "traefik-ssl-certs:/ssl-certs"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels: {
+          'traefik.http.routers.http-catchall.rule': 'hostregexp(`{host:.+}`)',
+          'traefik.http.routers.http-catchall.entrypoints': 'web',
+          'traefik.http.routers.http-catchall.middlewares': 'redirect-to-https',
+          'traefik.http.middlewares.redirect-to-https.redirectscheme.scheme': 'https'
+    }
+
+- name: download and run portainer container
+  community.docker.docker_container:
+    name: portainer
+    image: portainer/portainer-ce:latest
+    state: started
+    restart: true
+    restart_policy: "always"
+    recreate: yes
+    command: -H unix:///var/run/docker.sock
+    volumes:
+        - "/var/run/docker.sock:/var/run/docker.sock"
+        - "portainer-data:/data"
+    labels: {
+      # Frontend
+      'traefik.enable': 'true',
+      'traefik.http.routers.portainer.rule': 'Host(`portainer.marv.hamburg`)',
+      'traefik.http.routers.portainer.entrypoints': 'websecure',
+      'traefik.http.services.portainer.loadbalancer.server.port': '9000',
+      'traefik.http.routers.portainer.service': 'portainer',
+      'traefik.http.routers.portainer.tls.certresolver': 'lestaging',
+
+      # Edge
+      #'traefik.http.routers.edge.rule': 'Host(`edge.marv.hamburg`)',
+      #'traefik.http.routers.edge.entrypoints': 'websecure',
+      #'traefik.http.services.edge.loadbalancer.server.port': '8000',
+      #'traefik.http.routers.edge.service': 'edge',
+      #'traefik.http.routers.edge.tls.certresolver': leresolver
+    }
