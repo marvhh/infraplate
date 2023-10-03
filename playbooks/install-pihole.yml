@@ -1,0 +1,49 @@
+- name: install pihole container
+  hosts: all
+
+  tasks:
+  - name: deactivate systemd-resolved DNSStubListener
+    ansible.builtin.lineinfile:
+      path: /etc/systemd/resolved.conf
+      regexp: '^#DNSStubListener=yes'
+      line: DNSStubListener=no
+    become: yes
+
+  - name: restart systemd-resolved
+    ansible.builtin.service:
+      name: systemd-resolved
+      state: restarted
+    become: yes
+
+  - name: create docker volumes
+    community.docker.docker_volume:
+      name: "{{ item }}"
+    loop:
+      - pihole-etc
+      - pihole-dnsmasq
+
+  - name: download and run pihole container
+    community.docker.docker_container:
+      name: pihole
+      image: pihole/pihole:latest
+      state: started
+      restart: true
+      restart_policy: "unless-stopped"
+      recreate: yes
+      ports:
+        - "53:53/tcp"
+        - "53:53/udp"
+      env:
+        TZ: 'Europe/Berlin'
+      volumes:
+        - 'pihole-etc:/etc/pihole'
+        - 'pihole-dnsmasq:/etc/dnsmasq.d'
+      labels: {
+        'traefik.enable': 'true',
+        'traefik.http.routers.pihole.rule': 'Host(`pihole.marv.hamburg`)',
+        'traefik.http.routers.pihole.entrypoints': 'websecure',
+        'traefik.http.routers.pihole.tls.certresolver': 'lestaging',
+        'traefik.http.routers.pihole.tls.domains[0].main': 'pihole.marv.hamburg',
+        'traefik.http.routers.pihole.tls.domains[0].sans': 'pihole.marv.hamburg',
+        'traefik.http.services.pihole.loadbalancer.server.port': '80',
+      }
