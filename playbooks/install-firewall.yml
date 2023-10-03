@@ -1,0 +1,5 @@
+---
+- name: install ufw firewall
+  ansible.builtin.apt:
+    package: ufw
+    state: present
