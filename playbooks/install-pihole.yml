@@ -42,8 +42,11 @@
         'traefik.enable': 'true',
         'traefik.http.routers.pihole.rule': 'Host(`pihole.marv.hamburg`)',
         'traefik.http.routers.pihole.entrypoints': 'websecure',
+        'traefik.http.routers.pihole.middlewares': 'pihole-replacepath',
         'traefik.http.routers.pihole.tls.certresolver': 'lestaging',
         'traefik.http.routers.pihole.tls.domains[0].main': 'pihole.marv.hamburg',
         'traefik.http.routers.pihole.tls.domains[0].sans': 'pihole.marv.hamburg',
         'traefik.http.services.pihole.loadbalancer.server.port': '80',
+        'traefik.http.middlewares.pihole-replacepath.replacepathregex.regex': '^/$',
+        'traefik.http.middlewares.pihole-replacepath.replacepathregex.replacement': '/admin',
       }
