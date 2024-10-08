@@ -6,6 +6,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       #- WATCHTOWER_RUN_ONCE=true
+      #- WATCHTOWER_NOTIFICATIONS_HOSTNAME=watchtower
       - WATCHTOWER_NOTIFICATION_REPORT=true
       - WATCHTOWER_POLL_INTERVAL=3600
       - WATCHTOWER_NOTIFICATION_URL=/run/secrets/telegram_notification_url
